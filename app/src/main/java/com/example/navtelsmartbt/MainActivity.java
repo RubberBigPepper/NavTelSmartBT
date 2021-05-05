@@ -7,19 +7,68 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 
+import com.example.navtelsmartbt.ntcb_java.bluetooth.BTSocketReader;
+import com.example.navtelsmartbt.ntcb_java.bluetooth.BlueToothReader;
+import com.example.navtelsmartbt.ntcb_java.telemetry.Parameter;
+import com.example.navtelsmartbt.ntcb_java.utils.ByteUtils;
 import com.example.navtelsmartbt.view.DataAdapter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private DataAdapter adapter;
     public static final int PERMISSION_REQUEST_CODE = 12367;
+    private BlueToothReader blueToothReader = null;
+
+    private BlueToothReader.BlueToothReaderListener blueToothReaderListener = new BlueToothReader.BlueToothReaderListener() {
+        @Override
+        public void onTelemetryReceived(final List<Parameter> listParameters) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    for (Parameter param : listParameters) {
+                        adapter.setItemValue(param.getDescriptor().getName(),
+                                ByteUtils.Bytes2String(param.getData()));
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onIMEIReceived(final String imei) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    adapter.setItemValue("IMEI", imei);
+                }
+            });
+        }
+
+        @Override
+        public void onModelReceived(String model) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    adapter.setItemValue("MODEL & VERSION", model);
+                }
+            });
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,16 +76,25 @@ public class MainActivity extends AppCompatActivity {
         CheckPermissionsOrRun();
     }
 
-    private void showContent(){
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (isFinishing()) {
+            if (blueToothReader != null)
+                blueToothReader.stop();
+        }
+    }
+
+    private void showContent() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
-        adapter=new DataAdapter();
-        RecyclerView recyclerView=findViewById(R.id.recyclerView);
+        adapter = new DataAdapter();
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
         LinearLayoutManager llm = new LinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(llm);
         recyclerView.setAdapter(adapter);
-
+        ConnectBTDlg();
     }
 
     private void CheckPermissionsOrRun() {
@@ -93,10 +151,36 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void ConnectBTDlg(){
-        AlertDialog.Builder cBuilder = new AlertDialog.Builder(this);
-        cBuilder.setTitle(R.string.app_name);
-        cBuilder.setMessage("Выберите устройство для работы");
+    private void ConnectBTDlg() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Выберите устройство для работы");
 
+        final List<String> spinnerArray = new ArrayList<String>();
+        final ArrayList<BluetoothDevice> cArBTDevices = new ArrayList<BluetoothDevice>();
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
+        if (pairedDevices.size() > 0) {
+            for (BluetoothDevice device : pairedDevices) {
+                spinnerArray.add(device.getName() + " (" + device.getAddress() + ")");
+                cArBTDevices.add(device);
+            }
+            builder.setCancelable(false);
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                    this, android.R.layout.select_dialog_singlechoice, spinnerArray);
+            builder.setSingleChoiceItems(adapter,-1, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    BluetoothDevice cBTDevice = cArBTDevices.get(which);
+                    try {
+                        blueToothReader = new BlueToothReader(cBTDevice.getAddress(), blueToothReaderListener);
+                        dialog.dismiss();
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    }
+                }
+            });
+            builder.create().show();
+        }
     }
+
 }

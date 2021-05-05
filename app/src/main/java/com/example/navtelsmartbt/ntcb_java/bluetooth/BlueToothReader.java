@@ -3,29 +3,41 @@ package com.example.navtelsmartbt.ntcb_java.bluetooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-
-import java.net.Socket;
-import java.util.Set;
+import com.example.navtelsmartbt.ntcb_java.packet.MessageJava;
+import com.example.navtelsmartbt.ntcb_java.packet.ResponsesJava;
+import com.example.navtelsmartbt.ntcb_java.telemetry.Parameter;
+import com.example.navtelsmartbt.ntcb_java.telemetry.TelemetryParser;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadPoolExecutor;
 
 //этим классом будем читать
-public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener{
+public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener,
+        InputStreamParser.InputStreamParserListener {
     private String device = ""; //устройство для работы
     private BTSocketReader reader = null;
     private BluetoothSocket socket = null;
+    private InputStreamParser inputParser=new InputStreamParser(this);
+    private BlueToothReaderListener listener = null;
+    private BTSocketWriter writer = null;
 
-    public BlueToothReader(String device) throws Exception {
+    //интерфейс листенера состояний
+    public interface BlueToothReaderListener {
+        void onTelemetryReceived(List<Parameter> listParameters);
+        void onIMEIReceived(String imei);
+        void onModelReceived(String model);
+    }
+
+    public BlueToothReader(String device, BlueToothReaderListener listener) throws Exception {
         this.device = device;
+        this.listener = listener;
         socket = initSocket(device);
-        if (socket!=null){
-            reader=new BTSocketReader(socket, this);
-        }
-        else
+        if (socket != null) {
+            reader = new BTSocketReader(socket, this);
+            writer = new BTSocketWriter(socket);
+        } else
             throw new Exception("Bluetooth error!");
+        reader.start();
+        writer.start();
     }
 
     private BluetoothSocket initSocket(String strDevice) {
@@ -50,7 +62,7 @@ public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener{
 
     @Override
     public void onReadBytes(byte[] data, int leng) {
-
+        inputParser.setNewData(data, leng);
     }
 
     @Override
@@ -59,10 +71,26 @@ public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener{
     }
 
     public void stop(){
+        writer.setStop();
         reader.setStop();
         try {
             socket.close();
         }
         catch (Exception ex){}
+    }
+
+    @Override
+    public void onMessageReceived(MessageJava message) {
+        if (message.getCmd().getName().equals(ResponsesJava.TELEMETRY_ALL.getName())){
+            List<Parameter> parameterList= TelemetryParser.parseData(message);
+            if(parameterList.size()>0)
+                listener.onTelemetryReceived(parameterList);
+        }
+        if (message.getCmd().getName().equals(ResponsesJava.IMEI.getName())){
+            listener.onIMEIReceived(new String(message.getData()));
+        }
+        if (message.getCmd().getName().equals(ResponsesJava.MODEL_VERSION.getName())){
+            listener.onModelReceived(new String(message.getData()));
+        }
     }
 }

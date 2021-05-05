@@ -14,8 +14,8 @@ public class MessageJava {
     static byte[] PREAMBLE = "@NTC".getBytes(ByteUtils.CHARSET);//строковое представление преамбулы @NTC
     static byte[] IDr = new byte[] {0x0, 0x0, 0x0, 0x0};           //адрес получателя (четыре ноля, если получатель - устройство)
     static byte[] IDs = new byte[] {0x01, 0x0, 0x0, 0x0};          //адрес отправителя (единица и три ноля, если отправитель - андроид, комп, и т.д., то есть мастер)
-    static byte[] SERVER_TO_DEVICE = ByteUtils.concatenateByteArrays(PREAMBLE, IDr, IDs);                //заголовок для отправки устройству
-    static byte[] DEVICE_TO_SERVER = ByteUtils.concatenateByteArrays(PREAMBLE, IDs, IDr);                //заголовок для отправки серверу (андроиду)
+    public static byte[] SERVER_TO_DEVICE = ByteUtils.concatenateByteArrays(PREAMBLE, IDr, IDs);                //заголовок для отправки устройству
+    public static byte[] DEVICE_TO_SERVER = ByteUtils.concatenateByteArrays(PREAMBLE, IDs, IDr);                //заголовок для отправки серверу (андроиду)
 
     public MessageJava(ConstantNameJava cmd, byte[] data) {
         this.cmd = cmd;
@@ -23,12 +23,12 @@ public class MessageJava {
     }
 
     //формирование посылки для отправки устройству
-    static byte[] buildMessageToDevice(ConstantNameJava request) {
+    public static byte[] buildMessageToDevice(ConstantNameJava request) {
         return buildMessageToDevice(request, "");
     }
 
     //формирование посылки для отправки устройству
-    static byte[] buildMessageToDevice(ConstantNameJava request, String additionalText) {
+    public static byte[] buildMessageToDevice(ConstantNameJava request, String additionalText) {
         byte[] data = null;
         if (request.equals(RequestsJava.IMEI) || request.equals(RequestsJava.TELEMETRY_ALL) ||
                 request.equals(RequestsJava.MODEL_VERSION)) {//запросы без тела, игнорируем additionalText

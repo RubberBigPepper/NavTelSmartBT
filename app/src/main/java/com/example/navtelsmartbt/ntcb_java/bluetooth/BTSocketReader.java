@@ -1,14 +1,9 @@
 package com.example.navtelsmartbt.ntcb_java.bluetooth;
 
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothSocket;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 
 public class BTSocketReader extends Thread {
     private volatile boolean isStop = false;
@@ -20,11 +15,8 @@ public class BTSocketReader extends Thread {
 
     public interface BlueToothReaderListener {
         void onReadBytes(byte[] data, int leng);
-
         void onReaderStopped(BTSocketReader reader);
     }
-
-    ;
 
     public BTSocketReader(BluetoothSocket socket, @NonNull BlueToothReaderListener listener) throws IOException {
         inputStream = socket.getInputStream();
