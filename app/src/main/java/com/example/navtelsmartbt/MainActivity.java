@@ -13,15 +13,10 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
-import android.widget.Spinner;
 
-import com.example.navtelsmartbt.ntcb_java.bluetooth.BTSocketReader;
-import com.example.navtelsmartbt.ntcb_java.bluetooth.BlueToothReader;
+import com.example.navtelsmartbt.ntcb_java.bluetooth.BlueToothIO;
 import com.example.navtelsmartbt.ntcb_java.telemetry.Parameter;
 import com.example.navtelsmartbt.ntcb_java.utils.ByteUtils;
 import com.example.navtelsmartbt.view.DataAdapter;
@@ -33,9 +28,9 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
     private DataAdapter adapter;
     public static final int PERMISSION_REQUEST_CODE = 12367;
-    private BlueToothReader blueToothReader = null;
+    private BlueToothIO blueToothReader = null;
 
-    private BlueToothReader.BlueToothReaderListener blueToothReaderListener = new BlueToothReader.BlueToothReaderListener() {
+    private BlueToothIO.BlueToothReaderListener blueToothReaderListener = new BlueToothIO.BlueToothReaderListener() {
         @Override
         public void onTelemetryReceived(final List<Parameter> listParameters) {
             runOnUiThread(new Runnable() {
@@ -172,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialog, int which) {
                     BluetoothDevice cBTDevice = cArBTDevices.get(which);
                     try {
-                        blueToothReader = new BlueToothReader(cBTDevice.getAddress(), blueToothReaderListener);
+                        blueToothReader = new BlueToothIO(cBTDevice.getAddress(), blueToothReaderListener);
                         dialog.dismiss();
                     } catch (Exception exception) {
                         exception.printStackTrace();

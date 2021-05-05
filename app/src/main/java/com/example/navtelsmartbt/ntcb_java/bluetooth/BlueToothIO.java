@@ -11,9 +11,8 @@ import java.util.List;
 import java.util.UUID;
 
 //этим классом будем читать
-public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener,
+public class BlueToothIO implements  BTSocketReader.BlueToothReaderListener,
         InputStreamParser.InputStreamParserListener {
-    private String device = ""; //устройство для работы
     private BTSocketReader reader = null;
     private BluetoothSocket socket = null;
     private InputStreamParser inputParser=new InputStreamParser(this);
@@ -27,8 +26,7 @@ public class BlueToothReader implements  BTSocketReader.BlueToothReaderListener,
         void onModelReceived(String model);
     }
 
-    public BlueToothReader(String device, BlueToothReaderListener listener) throws Exception {
-        this.device = device;
+    public BlueToothIO(String device, BlueToothReaderListener listener) throws Exception {
         this.listener = listener;
         socket = initSocket(device);
         if (socket != null) {

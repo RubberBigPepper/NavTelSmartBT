@@ -9,12 +9,12 @@ import java.io.ByteArrayOutputStream;
 
 public class InputStreamParser {
     private InputStreamParserListener listener = null;
-    private ByteArrayOutputStream dataCache = new ByteArrayOutputStream();//сюда будем складывать пришедшие данные
+    private final ByteArrayOutputStream dataCache = new ByteArrayOutputStream();//сюда будем складывать пришедшие данные
     private int messageStart = -1; //индекс в данных, где начало посылки
     private int messageEnd = -1; //индекс в данных, где конец посылки
-    private byte[] START_SIGNATURE = MessageJava.SERVER_TO_DEVICE; //сигнатура начала посылки, т.к. от версии прошивки
-    private byte[] START_SIGNATURE_ALT = MessageJava.DEVICE_TO_SERVER;//зависит, то еще есть альтернативный вариант
-    private int MIN_LENG_FOR_START = START_SIGNATURE.length + 7;//начало + 2 байта длина данных + 21 байта на CRC + 3 байта на команду
+    private final byte[] START_SIGNATURE = MessageJava.SERVER_TO_DEVICE; //сигнатура начала посылки, т.к. от версии прошивки
+    private final byte[] START_SIGNATURE_ALT = MessageJava.DEVICE_TO_SERVER;//зависит, то еще есть альтернативный вариант
+    private final int MIN_LENG_FOR_START = START_SIGNATURE.length + 7;//начало + 2 байта длина данных + 21 байта на CRC + 3 байта на команду
 
     interface InputStreamParserListener {
         void onMessageReceived(MessageJava message);
