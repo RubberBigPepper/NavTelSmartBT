@@ -34,12 +34,12 @@ public class InputStreamParser {
     }
 
     private int findOneOfSignatures(byte[] signature, byte[] signatureAlt,
-                                    byte[] array, int startFrom){
+                                    byte[] array, int startFrom) {
         int res = ByteUtils.findFirst(array, signature, startFrom);
         if (res >= 0)
             return res;
         //не нашли, поищем альтернативный вариант
-        return ByteUtils.findFirst(array,signatureAlt, startFrom);
+        return ByteUtils.findFirst(array, signatureAlt, startFrom);
     }
 
     private void findStart(byte[] array) {
@@ -59,11 +59,11 @@ public class InputStreamParser {
         findStart(array);
         findEnd(array);
         if (messageStart != -1) { //нашли в потоке начало, попробуем сформировать посылку
-            if(messageEnd!=-1) {//в потоке есть и конец - формируем по старому
-                byte[] messageArray = new byte[messageEnd-messageStart+1];
+            if (messageEnd != -1) {//в потоке есть и конец - формируем по старому
+                byte[] messageArray = new byte[messageEnd - messageStart];
                 System.arraycopy(array, messageStart, messageArray, 0, messageArray.length);
                 MessageJava message = MessageJava.parseMessage(messageArray);
-                if (message!=null)
+                if (message != null)
                     listener.onMessageReceived(message);
                 try {//остатки не выбрасываем, формируем новый датакэш
                     dataCache.reset();
@@ -74,12 +74,11 @@ public class InputStreamParser {
                     ex.printStackTrace();
                 }
                 parseDataArray(dataCache.toByteArray()); //в остатке потока мог спрятаться еще один пакет данных, парсим его сразу
-            }
-            else {//иначе-попробуем весь остаток байтов скормить парсеру пакета
-                byte[] messageArray = new byte[messageEnd-messageStart+1];
+            } else {//иначе-попробуем весь остаток байтов скормить парсеру пакета
+                byte[] messageArray = new byte[messageEnd - messageStart];
                 System.arraycopy(array, messageStart, messageArray, 0, messageArray.length);
                 MessageJava message = MessageJava.parseMessage(messageArray);
-                if (message!=null) {
+                if (message != null) {
                     listener.onMessageReceived(message);
                     dataCache.reset();
                     messageStart = -1;
@@ -88,5 +87,5 @@ public class InputStreamParser {
             }
         }
     }
-
 }
+
