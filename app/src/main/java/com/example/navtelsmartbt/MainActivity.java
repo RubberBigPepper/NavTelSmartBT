@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import com.example.navtelsmartbt.ntcb_java.bluetooth.BlueToothIO;
 import com.example.navtelsmartbt.ntcb_java.telemetry.Parameter;
@@ -170,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                         blueToothReader = new BlueToothIO(cBTDevice.getAddress(), blueToothReaderListener);
                         dialog.dismiss();
                     } catch (Exception exception) {
+                        Toast.makeText(MainActivity.this,"Bluetooth device is not connected",Toast.LENGTH_SHORT).show();
                         exception.printStackTrace();
                     }
                 }

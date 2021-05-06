@@ -14,6 +14,7 @@ public class BTSocketReader extends Thread {
     private final long READ_DELAY = 100;
 
     public interface BlueToothReaderListener {
+        void onReaderInitialized(BTSocketReader reader);
         void onReadBytes(byte[] data, int leng);
         void onReaderStopped(BTSocketReader reader);
     }
@@ -37,26 +38,31 @@ public class BTSocketReader extends Thread {
             isStop = true;
     }
 
+    private boolean waitAndContinue(){
+        synchronized (mutex) {
+            if (isStop)//сигнал завершения
+                return false;
+            try {
+                mutex.wait(READ_DELAY);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        return true;
+    }
+
     @Override
     public void run() {
         mutex = new Object();
         byte[] bufferRead = new byte[1024];//буфер чтения
-        while (!isStop) {
+        listener.onReaderInitialized(this);
+        while (waitAndContinue()) {
             try {
                 int leng = inputStream.read(bufferRead, 0, bufferRead.length);
                 if (leng > 0) {//что то считали
                     listener.onReadBytes(bufferRead, leng);
                 }
             } catch (Exception ex) {
-            }
-            synchronized (mutex) {
-                if (isStop)//сигнал завершения
-                    break;
-                try {
-                    mutex.wait(READ_DELAY);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
             }
         }
         listener.onReaderStopped(this);

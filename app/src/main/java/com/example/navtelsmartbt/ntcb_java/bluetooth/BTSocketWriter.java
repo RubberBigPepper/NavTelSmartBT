@@ -19,7 +19,7 @@ public class BTSocketWriter extends Thread {
     private Object mutex = null;
     private OutputStream outputStream = null;
     private static final String TAG = "BlueToothWriter";
-    private final long READ_DELAY = 500;
+    private final long WRITE_DELAY = 100;
 
     public BTSocketWriter(BluetoothSocket socket) throws IOException {
         outputStream = socket.getOutputStream();
@@ -39,52 +39,39 @@ public class BTSocketWriter extends Thread {
             isStop = true;
     }
 
-    @Override
-    public void run() {
-        mutex = new Object();
-        byte[] message= MessageJava.buildMessageToDevice(RequestsJava.MODEL_VERSION);
-        if(message!=null) {
-            try {
-                outputStream.write(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+    private boolean waitAndContinue(){
         synchronized (mutex) {
             if (isStop)//сигнал завершения
-                return;
+                return false;
             try {
-                mutex.wait(READ_DELAY);
+                mutex.wait(WRITE_DELAY);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
-        message= MessageJava.buildMessageToDevice(RequestsJava.IMEI);
+        return true;
+    }
+
+    private void sendMessage(ConstantNameJava message){
+        byte[] packet= MessageJava.buildMessageToDevice(message);
         if(message!=null) {
             try {
-                outputStream.write(message);
+                outputStream.write(packet);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        while (!isStop) {
-            synchronized (mutex) {
-                if (isStop)//сигнал завершения
-                    break;
-                try {
-                    mutex.wait(READ_DELAY);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-            message= MessageJava.buildMessageToDevice(RequestsJava.TELEMETRY_ALL);
-            if(message!=null) {
-                try {
-                    outputStream.write(message);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+    }
+
+    @Override
+    public void run() {
+        mutex = new Object();
+        sendMessage(RequestsJava.MODEL_VERSION);
+        if (!waitAndContinue())
+            return;
+        sendMessage(RequestsJava.IMEI);
+        while (waitAndContinue()) {
+            sendMessage(RequestsJava.TELEMETRY_ALL);
         }
     }
 }

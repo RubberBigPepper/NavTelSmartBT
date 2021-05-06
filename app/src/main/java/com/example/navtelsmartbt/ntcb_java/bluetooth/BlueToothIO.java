@@ -35,7 +35,6 @@ public class BlueToothIO implements  BTSocketReader.BlueToothReaderListener,
         } else
             throw new Exception("Bluetooth error!");
         reader.start();
-        writer.start();
     }
 
     private BluetoothSocket initSocket(String strDevice) {
@@ -59,13 +58,18 @@ public class BlueToothIO implements  BTSocketReader.BlueToothReaderListener,
     }
 
     @Override
+    public void onReaderInitialized(BTSocketReader reader) {
+        writer.start();
+    }
+
+    @Override
     public void onReadBytes(byte[] data, int leng) {
         inputParser.setNewData(data, leng);
     }
 
     @Override
     public void onReaderStopped(BTSocketReader reader) {
-
+        writer.setStop();
     }
 
     public void stop(){
